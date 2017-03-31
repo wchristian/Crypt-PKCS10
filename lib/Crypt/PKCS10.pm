@@ -427,7 +427,7 @@ sub error {
     return $error;
 }
 
-my $pemre = qr/(?ms:^\r?-----BEGIN\s(?:NEW\s)?CERTIFICATE\sREQUEST-----\r?\n\s*(.*?)\s*^\r?-----END\s(?:NEW\s)?CERTIFICATE\sREQUEST-----\r?$)/;
+my $pemre = qr/(?ms:^\r?-----BEGIN\s(?:NEW\s)?CERTIFICATE\sREQUEST-----\s*\r?\n\s*(.*?)\s*^\r?-----END\s(?:NEW\s)?CERTIFICATE\sREQUEST-----\r?$)/;
 
 sub _new {
     my( $class, $die, $der ) = splice( @_, 0, 3 );
