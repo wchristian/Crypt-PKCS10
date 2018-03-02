@@ -1736,6 +1736,8 @@ sub __stringify {
 
 __END__
 
+=encoding utf-8
+
 =pod
 
 =begin :readme
@@ -2539,5 +2541,10 @@ Timothe Litt made most of the changes for V1.4+
 C<Crypt::PKCS10> is based on the generic ASN.1 module by Graham Barr and on the
  x509decode example by Norbert Klasen. It is also based upon the
 works of Duncan Segrest's C<Crypt-X509-CRL> module.
+
+=head1 AUTHORS
+
+Gideon Knocke <gknocke@cpan.org>
+Timothe Litt <tlhackque@cpan.org>
 
 =cut

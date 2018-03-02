@@ -29,7 +29,7 @@ $RECYCLE.BIN/
 .LSOverride
 
 # Icon must ends with two \r.
-Icon
+Icon
 
 # Thumbnails
 ._*
@@ -48,3 +48,22 @@ Commitlog
 .build*
 *.tmp
 SIGNATURE
+
+# Minilla
+/.build/
+/_build/
+/Build
+/Build.bat
+/blib
+/Makefile
+/pm_to_blib
+/carton.lock
+/.carton/
+/local/
+nytprof.out
+nytprof/
+cover_db/
+
+!LICENSE
+/_build_params
+MYMETA.*
