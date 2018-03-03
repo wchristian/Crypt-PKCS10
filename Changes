@@ -143,5 +143,12 @@ Revision history for perl module Crypt::PKCS10
  - API v0 tests should not try to verify a signature.
  - new() in void context will generate an exception.
 
+{{$NEXT}}
+
+1.9 2018-03-03T14:16:54Z
+
+ - Accept trailing whitespace after header line
+ - Convert build process to Minilla
+ - Add license to code file; fix Kwalitee
 
 __END__
