@@ -2547,4 +2547,8 @@ works of Duncan Segrest's C<Crypt-X509-CRL> module.
 Gideon Knocke <gknocke@cpan.org>
 Timothe Litt <tlhackque@cpan.org>
 
+=head1 LICENSE
+
+GPL v1 -- See LICENSE file for details
+
 =cut
