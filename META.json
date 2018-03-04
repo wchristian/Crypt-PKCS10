@@ -42,6 +42,10 @@
       },
       "runtime" : {
          "requires" : {
+            "Convert::ASN1" : "0",
+            "Encode" : "0",
+            "MIME::Base64" : "0",
+            "Scalar::Util" : "0",
             "perl" : "5.008001"
          }
       },
