@@ -1560,24 +1560,22 @@ sub checkSignature {
         # Verify signature using the correct module and hash type.
 
         if( $keyp->{keytype} eq 'RSA' ) {
-            eval { require Crypt::OpenSSL::RSA; };
-            die( "Unable to load Crypt::OpenSSL::RSA\n") if( $@ );
 
-            $key = Crypt::OpenSSL::RSA->new_public_key( $key );
-            $hash = "use_${hash}_hash";
-            eval { $key->$hash; };
-            die( "Unsupported hash type $hash\n" ) if( $@ );
-            $key->use_pkcs1_padding;
-            return $key->verify( $self->certificationRequest, $sig );
+            eval { require Crypt::PK::RSA; };
+            die( "Unable to load Crypt::PK::RSA\n" ) if( $@ );
+
+            $key = Crypt::PK::RSA->new( \$key );
+            return $key->verify_message( $sig, $self->certificationRequest, uc($hash),  "v1.5" );
+
         }
 
         if( $keyp->{keytype} eq 'DSA' ) {
-            eval { require Crypt::OpenSSL::DSA; };
-            die( "Unable to load Crypt::OpenSSL::DSA\n" ) if( $@ );
-            eval "require $hashmod" or die( "Unable to load $hashmod\n" ); ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
-            my $dsa = Crypt::OpenSSL::DSA->read_pub_key_str( $key );
-            return $dsa->verify( eval "$hashfcn( \$self->certificationRequest )", $sig ); ## no critic (BuiltinFunctions::ProhibitStringyEval)
+            eval { require Crypt::PK::DSA; };
+            die( "Unable to load Crypt::PK::DSA\n" ) if( $@ );
+
+            $key = Crypt::PK::DSA->new( \$key );
+            return $key->verify_message( $sig, $self->certificationRequest, uc($hash) );
         }
 
         if( $keyp->{keytype} eq 'ECC' ) {
@@ -1781,8 +1779,8 @@ F<Changes> describes additional improvements.  Details follow.
 
 C<Crypt::PKCS10> supports DSA, RSA and ECC public keys in CSRs.
 
-It depends on C<Crypt::OpenSSL::DSA>, C<Crypt::OpenSSL::RSA> and C<Crypt::PK::ECC>
-for some operations.  All are recommended.  Some methods will return errors if
+It depends on C<Crypt::PK::*> (provided by CryptX) for some operations.
+All are recommended. Some methods will return errors if
 Crypt::PKCS10 is presented with a CSR containing an unsupported public key type.
 
 To install this module type the following:
@@ -1796,15 +1794,13 @@ To install this module type the following:
 
 C<Convert::ASN1>
 
-C<Crypt::OpenSSL::DSA>
+C<Crypt::PK::DSA>
 
-C<Crypt::OpenSSL::RSA>
+C<Crypt::PK::RSA>
 
 C<Crypt::PK::ECC>
 
 C<Digest::SHA>
-
-For ECC: C<Crypt::PK::ECC>
 
 Very old CSRs may require C<DIGEST::MD{5,4,2}>
 
@@ -1982,6 +1978,8 @@ If B<true>, the CSR's signature is checked.  If verification fails, C<new> will 
 If B<false>, the CSR's signature is not checked.
 
 The default is B<true> for API version 1 and B<false> for API version 0.
+
+See C<checkSignature> for requirements and limitations.
 
 =back
 
@@ -2331,6 +2329,9 @@ the reason.
 
 Returns B<undef> if it was not possible to complete the verification process (e.g. a required
 Perl module could not be loaded or an unsupported key/signature type is present.)
+
+I<Note>: Requires Crypt::PK::* for the used algorithm to be installed. For RSA
+v1.5 padding is assumed, PSS is not supported (validation fails).
 
 
 =head2 certificateTemplate
