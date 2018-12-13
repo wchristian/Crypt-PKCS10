@@ -30,7 +30,7 @@ use Crypt::PKCS10;
 use File::Slurp;
 use Getopt::Std;
 
-our $VERSION = '1.10';
+our $VERSION = '1.11';
 
 our( $opt_l );
 

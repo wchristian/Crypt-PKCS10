@@ -167,6 +167,8 @@ If the first option is a HASHREF, it is expanded and any remaining options are a
 
     The default is **true** for API version 1 and **false** for API version 0.
 
+    See `checkSignature` for requirements and limitations.
+
 No exceptions are generated, unless `dieOnError` is set or `new()` is called in
 void context.
 
@@ -474,6 +476,9 @@ the reason.
 
 Returns **undef** if it was not possible to complete the verification process (e.g. a required
 Perl module could not be loaded or an unsupported key/signature type is present.)
+
+_Note_: Requires Crypt::PK::\* for the used algorithm to be installed. For RSA
+v1.5 padding is assumed, PSS is not supported (validation fails).
 
 ## certificateTemplate
 
