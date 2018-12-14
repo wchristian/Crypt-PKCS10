@@ -67,7 +67,7 @@
          "web" : "https://github.com/openxpki/Crypt-PKCS10"
       }
    },
-   "version" : "1.11",
+   "version" : "2.001",
    "x_contributors" : [
       "Gideon Knocke <gideonknocke@googlemail.com>",
       "Gideon Knocke <root@develop.localdomain>",
