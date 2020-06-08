@@ -340,6 +340,8 @@ sub _oid2name {
     my $class = shift;
     my( $oid ) = @_;
 
+    return unless($oid);
+
     if( exists $oids{$oid} ) {
 	$oid = $oids{$oid};
     }elsif( exists $oid2extkeyusage{$oid} ) {
@@ -1262,7 +1264,7 @@ sub subjectPublicKeyParams {
 
         my $par = $self->_init( 'eccName' );
         $rv->{curve} = $par->decode( $self->{certificationRequestInfo}{subjectPKInfo}{algorithm}{parameters} );
-        $rv->{curve} = $self->_oid2name( $rv->{curve} );
+        $rv->{curve} = $self->_oid2name( $rv->{curve} ) if ($rv->{curve});
     } elsif( $at eq 'dsa' ) {
         $rv->{keytype} = 'DSA';
         my $par = $self->_init( 'dsaKey' );
