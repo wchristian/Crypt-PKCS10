@@ -22,7 +22,7 @@ use Encode ();
 use MIME::Base64;
 use Scalar::Util ();
 
-our $VERSION = '2.001';
+our $VERSION = '2.002';
 
 my $apiVersion = undef;  # 0 for compatibility.  1 for prefered
 my $error;
