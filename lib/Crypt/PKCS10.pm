@@ -49,6 +49,7 @@ my %oids = (
     '1.2.840.113549.1.1.1'          => [ 'rsaEncryption', 'RSA encryption' ],
     '1.2.840.113549.1.1.5'          => [ 'sha1WithRSAEncryption', 'SHA1 with RSA encryption' ],
     '1.2.840.113549.1.1.4'          => [ 'md5WithRSAEncryption', 'MD5 with RSA encryption' ],
+    '1.2.840.113549.1.1.10'         => 'rsassaPss',
     '1.2.840.113549.1.9.14'         => 'extensionRequest',
     '1.3.6.1.4.1.311.13.2.3'        => 'OS_Version',                   # Microsoft
     '1.3.6.1.4.1.311.13.2.2'        => 'EnrollmentCSP',                # Microsoft
@@ -733,6 +734,12 @@ sub _new {
     ecdsaSigValue ::= SEQUENCE {
         r               INTEGER,
         s               INTEGER}
+
+    rsassaPssParam ::= SEQUENCE {
+        digestAlgorithm     [0] EXPLICIT AlgorithmIdentifier,
+        maskGenAlgorithm    ANY,
+        saltLength          [2] EXPLICIT INTEGER OPTIONAL,
+        trailerField        ANY OPTIONAL}
 ASN1
 
     $asn->registertype( 'qualifier', '1.3.6.1.5.5.7.2.1', $self->_init('CPSuri') );
@@ -769,6 +776,16 @@ ASN1
 
     $self->{signatureAlgorithm}
         = $self->_convert_signatureAlgorithm( $top->{signatureAlgorithm} );
+
+    # parse parameters for RSA PSS
+    if ($self->{signatureAlgorithm}{algorithm} eq 'rsassaPss') {
+        my $params = $self->_init('rsassaPssParam')->decode(
+            $self->{signatureAlgorithm}{parameters});
+        $self->{signatureAlgorithm}{parameters} = {
+             'saltLength' => ($params->{saltLength} || 32),
+             'digestAlgorithm' => $self->_oid2name($params->{digestAlgorithm}{algorithm}),
+        };
+    }
 
     # Extract bundle of bits that is signed
     # The DER is SEQUENCE -- CertificationRequest
@@ -1324,11 +1341,16 @@ sub signatureAlgorithm {
 sub signatureParams {
     my $self = shift;
 
-    if( exists $self->{signatureAlgorithm}{parameters} ) {
-        my( $tlen, undef, $tag ) = asn_decode_tag2( $self->{signatureAlgorithm}{parameters} );
-        if( $tlen != 0 && $tag != ASN_NULL ) {
-            return $self->{signatureAlgorithm}{parameters}
-        }
+    return unless ( exists $self->{signatureAlgorithm}{parameters} );
+
+    # For RSA PSS the parameters have been parsed to a hash already
+    if (ref $self->{signatureAlgorithm}{parameters} eq 'HASH') {
+        return $self->{signatureAlgorithm}{parameters};
+    }
+
+    my( $tlen, undef, $tag ) = asn_decode_tag2( $self->{signatureAlgorithm}{parameters} );
+    if( $tlen != 0 && $tag != ASN_NULL ) {
+        return $self->{signatureAlgorithm}{parameters}
     }
     # Known algorithm's parameters MAY return a hash of decoded fields.
     # For now, leaving that to the caller...
@@ -1572,16 +1594,22 @@ sub checkSignature {
 
         # Determine the signature hash type from the algorithm name
 
-        my( $hash, $hashmod, $hashfcn ); # hashnnn, Digest::mod, Digest::mod::fcn
+        my @params = ( $sig, $self->certificationRequest );
         if( $alg =~ /sha-?(\d+)/i ) {
-            $hash = "sha$1";
-            $hashmod = 'Digest::SHA';
-            $hashfcn = "Digest::SHA::$hash";
+            push @params, "SHA$1";
+
         } elsif( $alg =~ /md-?(\d)/i ) {
-            $hash = "md$1";
-            $hashmod = "Digest::MD$1";
-            $hashfcn = "Digest::MD$1::$hash";
+            push @params, "MD$1";
+
+        } elsif ( $alg eq 'rsassaPss' ) {
+
+            my $sigParam = $self->signatureParams;
+            push @params, uc($sigParam->{digestAlgorithm});
+            push @params, 'pss';
+            push @params, $sigParam->{saltLength};
+
         } else {
+
             die( "Unknown hash in signature algorithm $alg\n" );
         }
 
@@ -1597,7 +1625,10 @@ sub checkSignature {
             die( "Unable to load Crypt::PK::RSA\n" ) if( $@ );
 
             $key = Crypt::PK::RSA->new( \$key );
-            return $key->verify_message( $sig, $self->certificationRequest, uc($hash),  "v1.5" );
+
+            # if we have NOT pss padding we need to add v1.5 padding
+            push @params, 'v1.5' if (@params == 3);
+            return $key->verify_message( @params );
 
         }
 
@@ -1607,7 +1638,7 @@ sub checkSignature {
             die( "Unable to load Crypt::PK::DSA\n" ) if( $@ );
 
             $key = Crypt::PK::DSA->new( \$key );
-            return $key->verify_message( $sig, $self->certificationRequest, uc($hash) );
+            return $key->verify_message( @params );
         }
 
         if( $keyp->{keytype} eq 'ECC' ) {
@@ -1615,7 +1646,7 @@ sub checkSignature {
             die( "Unable to load Crypt::PK::ECC\n" ) if( $@ );
 
             $key = Crypt::PK::ECC->new( \$key );
-            return $key->verify_message( $sig, $self->certificationRequest, uc($hash) );
+            return $key->verify_message( @params );
         }
 
         die( "Unknown key type $keyp->{keytype}\n" );
@@ -2462,6 +2493,7 @@ B<registerOID>.
  1.2.840.113549.1.1.5       sha1WithRSAEncryption      (SHA1 with RSA encryption)
  1.2.840.113549.1.1.6       rsaOAEPEncryptionSET
  1.2.840.113549.1.1.7       RSAES-OAEP
+ 1.2.840.113549.1.1.10      rsassaPss
  1.2.840.113549.1.1.11      sha256WithRSAEncryption    (SHA-256 with RSA encryption)
  1.2.840.113549.1.1.12      sha384WithRSAEncryption
  1.2.840.113549.1.1.13      sha512WithRSAEncryption    (SHA-512 with RSA encryption)
