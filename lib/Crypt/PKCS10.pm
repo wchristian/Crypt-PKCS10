@@ -228,6 +228,199 @@ my %shortnames = (
 		  givenName              => 'GN',
 );
 
+our $schema = <<ASN1
+    DirectoryString ::= CHOICE {
+      teletexString   TeletexString,
+      printableString PrintableString,
+      bmpString       BMPString,
+      universalString UniversalString,
+      utf8String      UTF8String,
+      ia5String       IA5String,
+      integer         INTEGER}
+
+    Algorithms ::= ANY
+
+    Name ::= SEQUENCE OF RelativeDistinguishedName
+    RelativeDistinguishedName ::= SET OF AttributeTypeAndValue
+    AttributeTypeAndValue ::= SEQUENCE {
+      type  OBJECT IDENTIFIER,
+      value DirectoryString}
+
+    Attributes ::= SET OF Attribute
+    Attribute ::= SEQUENCE {
+      type   OBJECT IDENTIFIER,
+      values SET OF ANY}
+
+
+    AlgorithmIdentifier ::= SEQUENCE {
+      algorithm  OBJECT IDENTIFIER,
+      parameters Algorithms OPTIONAL}
+
+    SubjectPublicKeyInfo ::= SEQUENCE {
+      algorithm        AlgorithmIdentifier,
+      subjectPublicKey BIT STRING}
+
+    --- Certificate Request ---
+
+    CertificationRequest ::= SEQUENCE {
+      certificationRequestInfo  CertificationRequestInfo,
+      signatureAlgorithm        AlgorithmIdentifier,
+      signature                 BIT STRING},
+
+    CertificationRequestInfo ::= SEQUENCE {
+      version       INTEGER ,
+      subject       Name OPTIONAL,
+      subjectPKInfo SubjectPublicKeyInfo,
+      attributes    [0] Attributes OPTIONAL}
+
+    --- Extensions ---
+
+    BasicConstraints ::= SEQUENCE {
+        cA                  BOOLEAN OPTIONAL, -- DEFAULT FALSE,
+        pathLenConstraint   INTEGER OPTIONAL}
+
+    OS_Version ::= IA5String
+    emailAddress ::= IA5String
+
+    EnrollmentCSP ::= SEQUENCE {
+        KeySpec     INTEGER,
+        Name        BMPString,
+        Signature   BIT STRING}
+
+    ENROLLMENT_CSP_PROVIDER ::= SEQUENCE { -- MSDN
+        keySpec     INTEGER,
+        cspName     BMPString,
+        signature   BIT STRING}
+
+    ENROLLMENT_NAME_VALUE_PAIR ::= EnrollmentNameValuePair -- MSDN: SEQUENCE OF
+
+    EnrollmentNameValuePair ::= SEQUENCE { -- MSDN
+         name       BMPString,
+         value      BMPString}
+
+    ClientInformation ::= SEQUENCE { -- MSDN
+        clientId       INTEGER,
+        MachineName    UTF8String,
+        UserName       UTF8String,
+        ProcessName    UTF8String}
+
+    extensionRequest ::= SEQUENCE OF Extension
+    Extension ::= SEQUENCE {
+      extnID    OBJECT IDENTIFIER,
+      critical  BOOLEAN OPTIONAL,
+      extnValue OCTET STRING}
+
+    SubjectKeyIdentifier ::= OCTET STRING
+
+    certificateTemplate ::= SEQUENCE {
+       templateID              OBJECT IDENTIFIER,
+       templateMajorVersion    INTEGER OPTIONAL, -- (0..4294967295)
+       templateMinorVersion    INTEGER OPTIONAL} -- (0..4294967295)
+
+    EnhancedKeyUsage ::= SEQUENCE OF OBJECT IDENTIFIER
+    KeyUsage ::= BIT STRING
+    netscapeCertType ::= BIT STRING
+
+    ApplicationCertPolicies ::= SEQUENCE OF PolicyInformation -- Microsoft
+
+    PolicyInformation ::= SEQUENCE {
+        policyIdentifier   OBJECT IDENTIFIER,
+        policyQualifiers   SEQUENCE OF PolicyQualifierInfo OPTIONAL}
+
+    PolicyQualifierInfo ::= SEQUENCE {
+       policyQualifierId    OBJECT IDENTIFIER,
+       qualifier            ANY}
+
+    certificatePolicies ::= SEQUENCE OF certPolicyInformation -- RFC 3280
+
+    certPolicyInformation ::= SEQUENCE {
+        policyIdentifier    CertPolicyId,
+        policyQualifier     SEQUENCE OF certPolicyQualifierInfo OPTIONAL}
+
+    CertPolicyId ::= OBJECT IDENTIFIER
+
+    certPolicyQualifierInfo ::= SEQUENCE {
+        policyQualifierId CertPolicyQualifierId,
+        qualifier         ANY DEFINED BY policyQualifierId}
+
+    CertPolicyQualifierId ::= OBJECT IDENTIFIER
+
+    CertPolicyQualifier ::= CHOICE {
+        cPSuri     CPSuri,
+        userNotice UserNotice }
+
+    CPSuri ::= IA5String
+
+    UserNotice ::= SEQUENCE {
+        noticeRef     NoticeReference OPTIONAL,
+        explicitText  DisplayText OPTIONAL}
+
+    NoticeReference ::= SEQUENCE {
+        organization     DisplayText,
+        noticeNumbers    SEQUENCE OF INTEGER }
+
+    DisplayText ::= CHOICE {
+        ia5String        IA5String,
+        visibleString    VisibleString,
+        bmpString        BMPString,
+        utf8String       UTF8String }
+
+    unstructuredName ::= CHOICE {
+        Ia5String       IA5String,
+        directoryString DirectoryString}
+
+    challengePassword ::= DirectoryString
+
+    subjectAltName ::= SEQUENCE OF GeneralName
+
+    GeneralName ::= CHOICE {
+         otherName                       [0]     AnotherName,
+         rfc822Name                      [1]     IA5String,
+         dNSName                         [2]     IA5String,
+         x400Address                     [3]     ANY, --ORAddress,
+         directoryName                   [4]     Name,
+         ediPartyName                    [5]     EDIPartyName,
+         uniformResourceIdentifier       [6]     IA5String,
+         iPAddress                       [7]     OCTET STRING,
+         registeredID                    [8]     OBJECT IDENTIFIER}
+
+    AnotherName ::= SEQUENCE {
+         type           OBJECT IDENTIFIER,
+         value      [0] EXPLICIT ANY }
+
+    EDIPartyName ::= SEQUENCE {
+         nameAssigner            [0]     DirectoryString OPTIONAL,
+         partyName               [1]     DirectoryString }
+
+    certificateTemplateName ::= CHOICE {
+        octets          OCTET STRING,
+        directoryString DirectoryString}
+
+    rsaKey ::= SEQUENCE {
+        modulus         INTEGER,
+        publicExponent  INTEGER}
+
+    dsaKey  ::= INTEGER
+
+    dsaPars ::= SEQUENCE {
+        P               INTEGER,
+        Q               INTEGER,
+        G               INTEGER}
+
+    eccName ::= OBJECT IDENTIFIER
+
+    ecdsaSigValue ::= SEQUENCE {
+        r               INTEGER,
+        s               INTEGER}
+
+    rsassaPssParam ::= SEQUENCE {
+        digestAlgorithm     [0] EXPLICIT AlgorithmIdentifier,
+        maskGenAlgorithm    ANY,
+        saltLength          [2] EXPLICIT INTEGER OPTIONAL,
+        trailerField        ANY OPTIONAL}
+ASN1
+;
+
 my %name2oid;
 
 # For generating documentation, not part of API
@@ -549,198 +742,7 @@ sub _new {
 
     my $asn = Convert::ASN1->new;
     $self->{_asn} = $asn;
-    $asn->prepare(<<ASN1) or die( "Internal error in " . __PACKAGE__ . ": " . $asn->error );
-
-    DirectoryString ::= CHOICE {
-      teletexString   TeletexString,
-      printableString PrintableString,
-      bmpString       BMPString,
-      universalString UniversalString,
-      utf8String      UTF8String,
-      ia5String       IA5String,
-      integer         INTEGER}
-
-    Algorithms ::= ANY
-
-    Name ::= SEQUENCE OF RelativeDistinguishedName
-    RelativeDistinguishedName ::= SET OF AttributeTypeAndValue
-    AttributeTypeAndValue ::= SEQUENCE {
-      type  OBJECT IDENTIFIER,
-      value DirectoryString}
-
-    Attributes ::= SET OF Attribute
-    Attribute ::= SEQUENCE {
-      type   OBJECT IDENTIFIER,
-      values SET OF ANY}
-
-
-    AlgorithmIdentifier ::= SEQUENCE {
-      algorithm  OBJECT IDENTIFIER,
-      parameters Algorithms OPTIONAL}
-
-    SubjectPublicKeyInfo ::= SEQUENCE {
-      algorithm        AlgorithmIdentifier,
-      subjectPublicKey BIT STRING}
-
-    --- Certificate Request ---
-
-    CertificationRequest ::= SEQUENCE {
-      certificationRequestInfo  CertificationRequestInfo,
-      signatureAlgorithm        AlgorithmIdentifier,
-      signature                 BIT STRING},
-
-    CertificationRequestInfo ::= SEQUENCE {
-      version       INTEGER ,
-      subject       Name OPTIONAL,
-      subjectPKInfo SubjectPublicKeyInfo,
-      attributes    [0] Attributes OPTIONAL}
-
-    --- Extensions ---
-
-    BasicConstraints ::= SEQUENCE {
-        cA                  BOOLEAN OPTIONAL, -- DEFAULT FALSE,
-        pathLenConstraint   INTEGER OPTIONAL}
-
-    OS_Version ::= IA5String
-    emailAddress ::= IA5String
-
-    EnrollmentCSP ::= SEQUENCE {
-        KeySpec     INTEGER,
-        Name        BMPString,
-        Signature   BIT STRING}
-
-    ENROLLMENT_CSP_PROVIDER ::= SEQUENCE { -- MSDN
-        keySpec     INTEGER,
-        cspName     BMPString,
-        signature   BIT STRING}
-
-    ENROLLMENT_NAME_VALUE_PAIR ::= EnrollmentNameValuePair -- MSDN: SEQUENCE OF
-
-    EnrollmentNameValuePair ::= SEQUENCE { -- MSDN
-         name       BMPString,
-         value      BMPString}
-
-    ClientInformation ::= SEQUENCE { -- MSDN
-        clientId       INTEGER,
-        MachineName    UTF8String,
-        UserName       UTF8String,
-        ProcessName    UTF8String}
-
-    extensionRequest ::= SEQUENCE OF Extension
-    Extension ::= SEQUENCE {
-      extnID    OBJECT IDENTIFIER,
-      critical  BOOLEAN OPTIONAL,
-      extnValue OCTET STRING}
-
-    SubjectKeyIdentifier ::= OCTET STRING
-
-    certificateTemplate ::= SEQUENCE {
-       templateID              OBJECT IDENTIFIER,
-       templateMajorVersion    INTEGER OPTIONAL, -- (0..4294967295)
-       templateMinorVersion    INTEGER OPTIONAL} -- (0..4294967295)
-
-    EnhancedKeyUsage ::= SEQUENCE OF OBJECT IDENTIFIER
-    KeyUsage ::= BIT STRING
-    netscapeCertType ::= BIT STRING
-
-    ApplicationCertPolicies ::= SEQUENCE OF PolicyInformation -- Microsoft
-
-    PolicyInformation ::= SEQUENCE {
-        policyIdentifier   OBJECT IDENTIFIER,
-        policyQualifiers   SEQUENCE OF PolicyQualifierInfo OPTIONAL}
-
-    PolicyQualifierInfo ::= SEQUENCE {
-       policyQualifierId    OBJECT IDENTIFIER,
-       qualifier            ANY}
-
-    certificatePolicies ::= SEQUENCE OF certPolicyInformation -- RFC 3280
-
-    certPolicyInformation ::= SEQUENCE {
-        policyIdentifier    CertPolicyId,
-        policyQualifier     SEQUENCE OF certPolicyQualifierInfo OPTIONAL}
-
-    CertPolicyId ::= OBJECT IDENTIFIER
-
-    certPolicyQualifierInfo ::= SEQUENCE {
-        policyQualifierId CertPolicyQualifierId,
-        qualifier         ANY DEFINED BY policyQualifierId}
-
-    CertPolicyQualifierId ::= OBJECT IDENTIFIER
-
-    CertPolicyQualifier ::= CHOICE {
-        cPSuri     CPSuri,
-        userNotice UserNotice }
-
-    CPSuri ::= IA5String
-
-    UserNotice ::= SEQUENCE {
-        noticeRef     NoticeReference OPTIONAL,
-        explicitText  DisplayText OPTIONAL}
-
-    NoticeReference ::= SEQUENCE {
-        organization     DisplayText,
-        noticeNumbers    SEQUENCE OF INTEGER }
-
-    DisplayText ::= CHOICE {
-        ia5String        IA5String,
-        visibleString    VisibleString,
-        bmpString        BMPString,
-        utf8String       UTF8String }
-
-    unstructuredName ::= CHOICE {
-        Ia5String       IA5String,
-        directoryString DirectoryString}
-
-    challengePassword ::= DirectoryString
-
-    subjectAltName ::= SEQUENCE OF GeneralName
-
-    GeneralName ::= CHOICE {
-         otherName                       [0]     AnotherName,
-         rfc822Name                      [1]     IA5String,
-         dNSName                         [2]     IA5String,
-         x400Address                     [3]     ANY, --ORAddress,
-         directoryName                   [4]     Name,
-         ediPartyName                    [5]     EDIPartyName,
-         uniformResourceIdentifier       [6]     IA5String,
-         iPAddress                       [7]     OCTET STRING,
-         registeredID                    [8]     OBJECT IDENTIFIER}
-
-    AnotherName ::= SEQUENCE {
-         type           OBJECT IDENTIFIER,
-         value      [0] EXPLICIT ANY }
-
-    EDIPartyName ::= SEQUENCE {
-         nameAssigner            [0]     DirectoryString OPTIONAL,
-         partyName               [1]     DirectoryString }
-
-    certificateTemplateName ::= CHOICE {
-        octets          OCTET STRING,
-        directoryString DirectoryString}
-
-    rsaKey ::= SEQUENCE {
-        modulus         INTEGER,
-        publicExponent  INTEGER}
-
-    dsaKey  ::= INTEGER
-
-    dsaPars ::= SEQUENCE {
-        P               INTEGER,
-        Q               INTEGER,
-        G               INTEGER}
-
-    eccName ::= OBJECT IDENTIFIER
-
-    ecdsaSigValue ::= SEQUENCE {
-        r               INTEGER,
-        s               INTEGER}
-
-    rsassaPssParam ::= SEQUENCE {
-        digestAlgorithm     [0] EXPLICIT AlgorithmIdentifier,
-        maskGenAlgorithm    ANY,
-        saltLength          [2] EXPLICIT INTEGER OPTIONAL,
-        trailerField        ANY OPTIONAL}
-ASN1
+    $asn->prepare($schema) or die( "Internal error in " . __PACKAGE__ . ": " . $asn->error );
 
     $asn->registertype( 'qualifier', '1.3.6.1.5.5.7.2.1', $self->_init('CPSuri') );
     $asn->registertype( 'qualifier', '1.3.6.1.5.5.7.2.2', $self->_init('UserNotice') );
