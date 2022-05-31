@@ -369,6 +369,10 @@ our $schema = <<ASN1
         Ia5String       IA5String,
         directoryString DirectoryString}
 
+    unstructuredAddress ::= CHOICE {
+        Ia5String       IA5String,
+        directoryString DirectoryString}
+
     challengePassword ::= DirectoryString
 
     subjectAltName ::= SEQUENCE OF GeneralName
@@ -1026,6 +1030,12 @@ my %special;
      return $value;
  },
  unstructuredName => sub {
+     my $self = shift;
+     my( $value, $id ) = @_;
+
+     return $self->_hash2string( $value );
+ },
+ unstructuredAddress => sub {
      my $self = shift;
      my( $value, $id ) = @_;
 
