@@ -34,5 +34,6 @@ Note: Replace '0.10' in the examples below with the current version.
 
 * Upload tarball to https://pause.perl.org
 
-    minil release
+    # Note: `minil release` will bump the version, so don't use this anymore!
+    #minil release
 
