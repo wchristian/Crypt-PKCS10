@@ -67,7 +67,7 @@
          "web" : "https://github.com/openxpki/Crypt-PKCS10"
       }
    },
-   "version" : "2.003",
+   "version" : "2.004",
    "x_contributors" : [
       "Daniel Hoffend <dh@dotlan.net>",
       "Gideon Knocke <gideonknocke@googlemail.com>",
