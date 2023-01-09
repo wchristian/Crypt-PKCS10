@@ -1240,6 +1240,12 @@ sub subjectRaw {
 
 }
 
+sub subjectSequence {
+
+    my $self = shift;
+    return $self->{certificationRequestInfo}{subject_raw};
+
+}
 
 sub subjectAltName {
     my $self = shift;
@@ -2196,6 +2202,45 @@ second level, too:
             }
         ]
     ];
+
+=head3 subjectSequence
+
+Returns the subject as returned from the ASN1 parser.
+
+Similar to subjectRaw this is a list with the RDNs but each item is
+always a list itself, in case of a single valued RND holding only
+a single item. Each item is a hash with the keys type and value where
+the value part is a hash with the format as key and the item value as
+value:
+
+    [
+        [
+            {
+                'value' => { 'ia5String' => 'Org' },
+                'type' => '0.9.2342.19200300.100.1.25'
+            }
+        ],
+        [
+            {
+                'value' => { 'utf8String' => 'ACME' },
+                'type' => '2.5.4.10'
+            },
+        ],
+        [
+            {
+
+                'type' => '2.5.4.3',
+                'value' => { 'utf8String' => 'Foobar' }
+            },
+            {
+                'type' => '0.9.2342.19200300.100.1.1',
+                'value' => { 'utf8String' => 'foobar' }
+            }
+        ]
+    ];
+
+This structure can be used directly to assemble ASN1 structures with
+the OpenXPKI::Crypt::* objects.
 
 =head3 commonName
 
