@@ -21,6 +21,7 @@ use Convert::ASN1( qw/:tag :const/ );
 use Encode ();
 use MIME::Base64;
 use Scalar::Util ();
+use Clone 'clone';
 
 our $VERSION = '2.005';
 
@@ -744,6 +745,7 @@ sub _new {
 
     $self->{_bmpenc} = Encode::find_encoding('UCS2-BE');
 
+    local ( $Convert::ASN1::parser::yyval, @Convert::ASN1::parser::yyvs );
     my $asn = Convert::ASN1->new;
     $self->{_asn} = $asn;
     $asn->prepare($schema) or die( "Internal error in " . __PACKAGE__ . ": " . $asn->error );
@@ -1162,7 +1164,7 @@ sub _init {
     my $self = shift;
     my( $node, $optional ) = @_;
 
-    my $parsed = $self->{_asn}->find($node);
+    my $parsed = clone $self->{_asn}->find($node);
 
     unless( defined $parsed || $optional ) {
 	croak( "Missing node $node in ASN.1" );

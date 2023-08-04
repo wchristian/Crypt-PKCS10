@@ -30,7 +30,7 @@ my @dirpath = (File::Spec->splitpath( $0 ))[0,1];
 
 my $decoded;
 
-plan  tests => 12;
+plan  tests => 13;
 
 # Basic functions test requires RSA
 
@@ -820,6 +820,18 @@ subtest 'API v0' => sub {
     # More API v0 tests needed
 };
 
+if ( not eval { require Net::Prometheus } ) {
+    diag "Net::Prometheus not installed, skipping leak test";
+    ok 1;
+}
+else {    # there are some leaks left, but i ran out of time on those
+    $decoded = undef;
+    is(
+        ( Net::Prometheus::PerlCollector::count_heap(2) )[3]
+          ->{"Convert::ASN1::parser"},
+        undef,
+        "no uncontrolled parser objects leak"
+    );
+}
 
 1;
-
